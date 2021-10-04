@@ -8,10 +8,12 @@ import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.zxing.integration.android.IntentIntegrator
+import com.google.zxing.integration.android.IntentResult
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var barcodeContent : String
+    private var barcodeContent : String? = null
+    private var dao = DAO()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,17 +26,28 @@ class MainActivity : AppCompatActivity() {
         val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
 
 
-        result?.let{
-            result.contents?.let{content->
-                barcodeContent = content
-                Log.d(LOG_TAG, "barcode content : $barcodeContent")
-                Toast.makeText(this, "Scanned: $content", Toast.LENGTH_LONG).show()
-            }?:let{
-                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show()
-            }
-        }?:let{
-            super.onActivityResult(requestCode, resultCode, data)
+        barcodeContent = getBarcode(result)
+
+
+        barcodeContent?.let{ barcode->
+            dao.searchByCode(barcode)
         }
+
+
+        barcodeContent?:super.onActivityResult(requestCode, resultCode, data)
+
+    }
+
+    private fun getBarcode(result: IntentResult) : String?{
+        result?.let {
+            result.contents?.let { content ->
+                Log.d(LOG_TAG, "barcode content : $content")
+                Toast.makeText(this, "Scanned: $content", Toast.LENGTH_LONG).show()
+                return content
+            }
+        }
+
+        return null
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
